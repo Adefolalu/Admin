@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MutantWarplets Admin</title>
+    <script src="https://cdn.ethers.io/lib/ethers-5.7.2.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        
+        .section h2 {
+            color: #333;
+            font-size: 18px;
+            margin-bottom: 16px;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+        
+        .info-label {
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .info-value {
+            color: #333;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+        
+        .input-group {
+            margin-bottom: 16px;
+        }
+        
+        label {
+            display: block;
+            color: #555;
+            font-weight: 500;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 8px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
+        }
+        
+        .btn-connect {
+            background: #333;
+            color: white;
+            margin-bottom: 20px;
+        }
+        
+        .btn-connect:hover {
+            background: #000;
+        }
+        
+        .status {
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 16px;
+            font-size: 14px;
+            display: none;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+        
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+            display: block;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 0.8s linear infinite;
+            margin-left: 8px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧬 MutantWarplets Admin</h1>
+        <p class="subtitle">Manage your contract on Base</p>
+        
+        <button id="connectBtn" class="btn-connect">Connect Wallet</button>
+        
+        <div id="mainContent" class="hidden">
+            <div class="section">
+                <h2>📊 Contract Info</h2>
+                <div class="info-row">
+                    <span class="info-label">Contract Address:</span>
+                    <span class="info-value" id="contractAddr">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Current Owner:</span>
+                    <span class="info-value" id="ownerAddr">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Your Address:</span>
+                    <span class="info-value" id="userAddr">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Contract Balance:</span>
+                    <span class="info-value" id="balance">-</span>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>💸 Withdraw ETH</h2>
+                <p style="color: #666; font-size: 13px; margin-bottom: 16px;">
+                    Withdraw the entire contract balance to the owner's address
+                </p>
+                <button id="withdrawBtn" class="btn-danger">Withdraw Balance</button>
+                <div id="withdrawStatus" class="status"></div>
+            </div>
+            
+            <div class="section">
+                <h2>🔑 Transfer Ownership</h2>
+                <div class="input-group">
+                    <label for="newOwner">New Owner Address</label>
+                    <input 
+                        type="text" 
+                        id="newOwner" 
+                        placeholder="0x..."
+                    >
+                </div>
+                <button id="transferBtn" class="btn-primary">Transfer Ownership</button>
+                <div id="transferStatus" class="status"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const CONTRACT_ADDRESS = '0xYourContractAddressHere'; // UPDATE THIS
+        const BASE_CHAIN_ID = 8453; // Base mainnet
+        
+        const CONTRACT_ABI = [
+            "function owner() view returns (address)",
+            "function withdraw() external",
+            "function transferOwnership(address newOwner) external"
+        ];
+        
+        let provider;
+        let signer;
+        let contract;
+        let userAddress;
+        
+        const connectBtn = document.getElementById('connectBtn');
+        const mainContent = document.getElementById('mainContent');
+        const withdrawBtn = document.getElementById('withdrawBtn');
+        const transferBtn = document.getElementById('transferBtn');
+        const newOwnerInput = document.getElementById('newOwner');
+        
+        connectBtn.addEventListener('click', connectWallet);
+        withdrawBtn.addEventListener('click', withdraw);
+        transferBtn.addEventListener('click', transferOwnership);
+        
+        async function connectWallet() {
+            if (typeof window.ethereum === 'undefined') {
+                alert('Please install MetaMask to use this dApp');
+                return;
+            }
+            
+            try {
+                connectBtn.textContent = 'Connecting...';
+                connectBtn.disabled = true;
+                
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                await provider.send("eth_requestAccounts", []);
+                
+                const network = await provider.getNetwork();
+                if (network.chainId !== BASE_CHAIN_ID) {
+                    try {
+                        await window.ethereum.request({
+                            method: 'wallet_switchEthereumChain',
+                            params: [{ chainId: '0x2105' }], // Base mainnet
+                        });
+                    } catch (switchError) {
+                        if (switchError.code === 4902) {
+                            alert('Please add Base network to your wallet');
+                        }
+                        throw switchError;
+                    }
+                }
+                
+                signer = provider.getSigner();
+                userAddress = await signer.getAddress();
+                contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+                
+                await loadContractInfo();
+                
+                connectBtn.classList.add('hidden');
+                mainContent.classList.remove('hidden');
+                
+            } catch (error) {
+                console.error(error);
+                alert('Failed to connect: ' + error.message);
+                connectBtn.textContent = 'Connect Wallet';
+                connectBtn.disabled = false;
+            }
+        }
+        
+        async function loadContractInfo() {
+            try {
+                const owner = await contract.owner();
+                const balance = await provider.getBalance(CONTRACT_ADDRESS);
+                
+                document.getElementById('contractAddr').textContent = 
+                    CONTRACT_ADDRESS.slice(0, 6) + '...' + CONTRACT_ADDRESS.slice(-4);
+                document.getElementById('ownerAddr').textContent = 
+                    owner.slice(0, 6) + '...' + owner.slice(-4);
+                document.getElementById('userAddr').textContent = 
+                    userAddress.slice(0, 6) + '...' + userAddress.slice(-4);
+                document.getElementById('balance').textContent = 
+                    ethers.utils.formatEther(balance) + ' ETH';
+                
+                if (owner.toLowerCase() !== userAddress.toLowerCase()) {
+                    showStatus('withdrawStatus', 'error', '⚠️ You are not the owner of this contract');
+                    withdrawBtn.disabled = true;
+                    transferBtn.disabled = true;
+                }
+            } catch (error) {
+                console.error(error);
+                showStatus('withdrawStatus', 'error', 'Failed to load contract info: ' + error.message);
+            }
+        }
+        
+        async function withdraw() {
+            try {
+                withdrawBtn.disabled = true;
+                withdrawBtn.innerHTML = 'Processing<span class="loading"></span>';
+                showStatus('withdrawStatus', 'info', '⏳ Initiating withdrawal...');
+                
+                const tx = await contract.withdraw();
+                showStatus('withdrawStatus', 'info', '⏳ Transaction submitted. Waiting for confirmation...');
+                
+                await tx.wait();
+                showStatus('withdrawStatus', 'success', '✅ Withdrawal successful! Transaction: ' + tx.hash.slice(0, 10) + '...');
+                
+                await loadContractInfo();
+                
+            } catch (error) {
+                console.error(error);
+                showStatus('withdrawStatus', 'error', '❌ Withdrawal failed: ' + (error.reason || error.message));
+            } finally {
+                withdrawBtn.disabled = false;
+                withdrawBtn.textContent = 'Withdraw Balance';
+            }
+        }
+        
+        async function transferOwnership() {
+            const newOwner = newOwnerInput.value.trim();
+            
+            if (!ethers.utils.isAddress(newOwner)) {
+                showStatus('transferStatus', 'error', '❌ Invalid address');
+                return;
+            }
+            
+            if (!confirm(`Are you sure you want to transfer ownership to ${newOwner}?`)) {
+                return;
+            }
+            
+            try {
+                transferBtn.disabled = true;
+                transferBtn.innerHTML = 'Processing<span class="loading"></span>';
+                showStatus('transferStatus', 'info', '⏳ Initiating ownership transfer...');
+                
+                const tx = await contract.transferOwnership(newOwner);
+                showStatus('transferStatus', 'info', '⏳ Transaction submitted. Waiting for confirmation...');
+                
+                await tx.wait();
+                showStatus('transferStatus', 'success', '✅ Ownership transferred successfully! Transaction: ' + tx.hash.slice(0, 10) + '...');
+                
+                await loadContractInfo();
+                
+            } catch (error) {
+                console.error(error);
+                showStatus('transferStatus', 'error', '❌ Transfer failed: ' + (error.reason || error.message));
+            } finally {
+                transferBtn.disabled = false;
+                transferBtn.textContent = 'Transfer Ownership';
+            }
+        }
+        
+        function showStatus(elementId, type, message) {
+            const statusEl = document.getElementById(elementId);
+            statusEl.className = `status ${type}`;
+            statusEl.textContent = message;
+        }
+    </script>
+</body>
+  </html>
